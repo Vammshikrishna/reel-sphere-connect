@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Film, Mail, Lock, Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -37,11 +37,32 @@ const Auth = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [pendingRedirect, setPendingRedirect] = useState<string | null>(null);
   const navigate = useNavigate();
-  const { signIn, signUp } = useAuth();
+  const { signIn, signUp, user, profile } = useAuth();
   const { toast } = useToast();
 
   const currentFields = isLogin ? FORM_FIELDS.LOGIN : FORM_FIELDS.SIGNUP;
+
+  // Redirect when user state updates after successful auth
+  useEffect(() => {
+    if (user && pendingRedirect) {
+      // Check if onboarding is complete for existing users
+      if (pendingRedirect === '/feed' && profile && !profile.onboarding_completed) {
+        navigate('/complete-profile', { replace: true });
+      } else {
+        navigate(pendingRedirect, { replace: true });
+      }
+      setPendingRedirect(null);
+    }
+  }, [user, profile, pendingRedirect, navigate]);
+
+  // Redirect already logged in users
+  useEffect(() => {
+    if (user && !pendingRedirect) {
+      navigate('/feed', { replace: true });
+    }
+  }, [user, pendingRedirect, navigate]);
 
   const handleAuthAction = async (action: 'signIn' | 'signUp') => {
     const schema = action === 'signIn' ? loginSchema : signUpSchema;
@@ -66,19 +87,20 @@ const Auth = () => {
 
       if (error) {
         setErrors({ form: error.message });
+        setIsLoading(false);
       } else {
         if (action === 'signIn') {
           toast({ title: "Welcome back!", description: "You have successfully signed in." });
-          navigate('/feed', { replace: true });
+          // Set pending redirect - navigation will happen when auth state updates
+          setPendingRedirect('/feed');
         } else {
           toast({ title: "Account created!", description: "Please complete your profile." });
-          navigate('/complete-profile', { replace: true });
+          setPendingRedirect('/complete-profile');
           setFormData({ email: '', password: '' });
         }
       }
     } catch (err) {
       setErrors({ form: 'An unexpected error occurred. Please try again.' });
-    } finally {
       setIsLoading(false);
     }
   };
