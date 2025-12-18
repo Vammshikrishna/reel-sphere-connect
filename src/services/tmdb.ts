@@ -1,4 +1,5 @@
-export const TMDB_API_KEY = '6f333da40e57ee8319f5f977a458ef98'; // Replace with your actual API key
+import { supabase } from '@/integrations/supabase/client';
+
 export const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
 export const TMDB_IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/w500';
 
@@ -16,13 +17,29 @@ export interface TMDBContent {
     genre_ids?: number[];
 }
 
+// Fetch from TMDB via edge function proxy
+const fetchFromProxy = async (path: string, params: string = ''): Promise<any> => {
+    try {
+        const { data, error } = await supabase.functions.invoke('tmdb-proxy', {
+            body: { path, params }
+        });
+
+        if (error) {
+            console.error('TMDB proxy error:', error);
+            return null;
+        }
+
+        return data;
+    } catch (error) {
+        console.error('Error calling TMDB proxy:', error);
+        return null;
+    }
+};
+
 export const fetchByPath = async (path: string, params: string = ''): Promise<TMDBContent[]> => {
     try {
-        const url = `${TMDB_BASE_URL}${path}?api_key=${TMDB_API_KEY}&language=en-US${params}`;
-        const response = await fetch(url);
-        if (!response.ok) throw new Error(`Failed to fetch ${path}`);
-        const data = await response.json();
-        return data.results;
+        const data = await fetchFromProxy(path, params);
+        return data?.results || [];
     } catch (error) {
         console.error(`Error fetching ${path}:`, error);
         return [];
@@ -30,7 +47,6 @@ export const fetchByPath = async (path: string, params: string = ''): Promise<TM
 };
 
 export const fetchContent = async (type: 'movie' | 'tv' | 'short', language?: string): Promise<TMDBContent[]> => {
-    // Re-implement using fetchByPath or keep custom logic for specific filters
     const langParam = language && language !== 'all' ? `&with_original_language=${language}` : '';
 
     if (type === 'tv') {
@@ -57,10 +73,8 @@ export const fetchIndianMovies = () => fetchByPath('/discover/movie', '&with_ori
 export const fetchContentDetails = async (id: number, type: 'movie' | 'tv' = 'movie') => {
     try {
         const endpoint = type === 'movie' ? `/movie/${id}` : `/tv/${id}`;
-        const url = `${TMDB_BASE_URL}${endpoint}?api_key=${TMDB_API_KEY}&language=en-US&append_to_response=credits,videos,similar,reviews`;
-        const response = await fetch(url);
-        if (!response.ok) throw new Error(`Failed to fetch ${type} details`);
-        return await response.json();
+        const data = await fetchFromProxy(endpoint, '&append_to_response=credits,videos,similar,reviews');
+        return data;
     } catch (error) {
         console.error(`Error fetching ${type} details:`, error);
         return null;
