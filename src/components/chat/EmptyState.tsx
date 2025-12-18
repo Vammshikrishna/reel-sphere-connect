@@ -1,28 +1,15 @@
 import { LucideIcon } from 'lucide-react';
-import { ReactNode } from 'react';
 
 interface EmptyStateProps {
-    Icon?: LucideIcon;
-    title?: string;
-    message?: string;
-    action?: ReactNode;
+    Icon: LucideIcon;
+    title: string;
+    message: string;
 }
 
-export const EmptyState = ({ Icon, title, message, action }: EmptyStateProps) => {
-    return (
-        <div className="flex flex-col items-center justify-center h-full w-full p-8 text-center animate-fade-in">
-            {Icon && (
-                <div className="bg-primary/10 p-6 rounded-full mb-6">
-                    <Icon className="h-12 w-12 text-primary" />
-                </div>
-            )}
-            {title && <h3 className="text-2xl font-bold mb-2">{title}</h3>}
-            {message && (
-                <p className="text-muted-foreground max-w-md mb-6">
-                    {message}
-                </p>
-            )}
-            {action}
-        </div>
-    );
-};
+export const EmptyState = ({ Icon, title, message }: EmptyStateProps) => (
+    <div className="text-center text-gray-500 mt-16">
+        <Icon className="h-16 w-16 mx-auto mb-4 text-gray-600" />
+        <h2 className="text-xl font-semibold">{title}</h2>
+        <p className="mt-2">{message}</p>
+    </div>
+);

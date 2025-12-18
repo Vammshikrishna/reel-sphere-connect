@@ -70,7 +70,7 @@ const ChatPage = () => {
         partnerId={partner.id}
         partnerName={partner.full_name}
         partnerAvatarUrl={partner.avatar_url}
-        onBackClick={() => navigate(-1)}
+        onBackClick={() => navigate('/chats')}
       />
     </div>
   );

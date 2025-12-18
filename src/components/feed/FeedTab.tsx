@@ -11,7 +11,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { PlusCircle } from "lucide-react";
 import MediaUpload from "./MediaUpload";
-import { ResponsiveGrid } from "@/components/ui/mobile-responsive-grid";
 import { z } from "zod";
 import { Post } from "@/types";
 
@@ -95,7 +94,7 @@ const FeedTab = ({ postRatings, onRate }: FeedTabProps) => {
           .eq('user_id', user.id);
 
         if (likes) {
-          setLikedPostIds(new Set(likes.map(l => l.post_id).filter((id): id is string => id !== null)));
+          setLikedPostIds(new Set(likes.map(l => l.post_id)));
         }
       }
 
@@ -316,55 +315,53 @@ const FeedTab = ({ postRatings, onRate }: FeedTabProps) => {
       </Card>
 
       {/* Posts Feed */}
-      <div className="mt-6">
+      <div className="space-y-6">
         {posts.length === 0 ? (
           <Card className="glass-card p-8 text-center">
-            <p className="text-muted-foreground mb-4">No posts yet. Be the first to share something!</p>
+            <p className="text-gray-400 mb-4">No posts yet. Be the first to share something!</p>
             <Button onClick={() => setShowCreatePost(true)} className="bg-gradient-to-r from-primary to-primary/80">
               Create First Post
             </Button>
           </Card>
         ) : (
-          <ResponsiveGrid cols={{ sm: 1, md: 1 }} gap={6}>
-            {posts.map((post) => {
-              const author = post.profiles;
-              const authorName = author?.full_name || author?.username || 'Anonymous User';
-              const authorRole = author?.craft || 'Creator';
-              const getInitials = (name: string) => {
-                return name.split(' ').map(word => word[0]).join('').toUpperCase().slice(0, 2);
-              };
+          posts.map((post) => {
+            const author = post.profiles;
+            const authorName = author?.full_name || author?.username || 'Anonymous User';
+            const authorRole = author?.craft || 'Creator';
+            const getInitials = (name: string) => {
+              return name.split(' ').map(word => word[0]).join('').toUpperCase().slice(0, 2);
+            };
 
-              return (
-                <PostCard
-                  key={post.id}
-                  id={post.id}
-                  author={{
-                    id: author?.id,
-                    name: authorName,
-                    role: authorRole,
-                    initials: getInitials(authorName),
-                    avatar: author?.avatar_url || undefined
-                  }}
-                  timeAgo={new Date(post.created_at).toLocaleDateString()}
-                  content={post.content}
-                  hasImage={post.media_type === 'image'}
-                  imageAlt={post.media_type === 'image' ? 'Post image' : undefined}
-                  hasVideo={post.media_type === 'video'}
-                  videoThumbnail={post.media_type === 'video' ? 'Post video' : undefined}
-                  isAIGenerated={post.has_ai_generated}
-                  like_count={post.like_count}
-                  comment_count={post.comment_count}
-                  share_count={post.share_count}
-                  tags={post.tags || []}
-                  rating={postRatings[post.id]}
-                  currentUserLiked={likedPostIds.has(post.id)}
-                  onRate={onRate}
-                  onLikeToggle={handleLikeToggle}
-                  mediaUrl={post.media_url}
-                />
-              );
-            })}
-          </ResponsiveGrid>
+            return (
+              <PostCard
+                key={post.id}
+                id={post.id}
+                author={{
+                  id: author?.id,
+                  name: authorName,
+                  role: authorRole,
+                  initials: getInitials(authorName),
+                  avatar: author?.avatar_url || undefined
+                }}
+                timeAgo={new Date(post.created_at).toLocaleDateString()}
+                content={post.content}
+                hasImage={post.media_type === 'image'}
+                imageAlt={post.media_type === 'image' ? 'Post image' : undefined}
+                hasVideo={post.media_type === 'video'}
+                videoThumbnail={post.media_type === 'video' ? 'Post video' : undefined}
+                isAIGenerated={post.has_ai_generated}
+                like_count={post.like_count}
+                comment_count={post.comment_count}
+                share_count={post.share_count}
+                tags={post.tags || []}
+                rating={postRatings[post.id]}
+                currentUserLiked={likedPostIds.has(post.id)}
+                onRate={onRate}
+                onLikeToggle={handleLikeToggle}
+                mediaUrl={post.media_url}
+              />
+            );
+          })
         )}
       </div>
     </>

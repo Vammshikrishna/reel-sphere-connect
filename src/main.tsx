@@ -6,16 +6,15 @@ import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import './index.css';
 
 createRoot(document.getElementById("root")!).render(
-  <Suspense
-    fallback={
+  <React.StrictMode>
+    <Suspense fallback={
       <div className="min-h-screen bg-background flex items-center justify-center">
         <LoadingSpinner size="lg" />
       </div>
-    }
-  >
-    <AuthProvider>
-      <App />
-    </AuthProvider>
-  </Suspense>
+    }>
+      <AuthProvider>
+        <App />
+      </AuthProvider>
+    </Suspense>
+  </React.StrictMode>
 );
-
