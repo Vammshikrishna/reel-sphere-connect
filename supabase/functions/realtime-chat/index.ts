@@ -1,11 +1,12 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { serve } from "jsr:@std/http";
+import { createClient } from "@supabase/supabase-js";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-Deno.serve(async (req: Request) => {
+serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -13,7 +14,7 @@ Deno.serve(async (req: Request) => {
   // Verify JWT authentication
   const authHeader = req.headers.get('Authorization');
   if (!authHeader) {
-    return new Response("Unauthorized", { status: 401, headers: corsHeaders });
+    return new Response("Unauthorized", { status: 401 });
   }
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
@@ -26,7 +27,7 @@ Deno.serve(async (req: Request) => {
 
   if (authError || !user) {
     console.error('Authentication failed:', authError);
-    return new Response("Unauthorized", { status: 401, headers: corsHeaders });
+    return new Response("Unauthorized", { status: 401 });
   }
 
   console.log('Authenticated user:', user.id);
@@ -35,7 +36,7 @@ Deno.serve(async (req: Request) => {
   const upgradeHeader = headers.get("upgrade") || "";
 
   if (upgradeHeader.toLowerCase() !== "websocket") {
-    return new Response("Expected WebSocket connection", { status: 400, headers: corsHeaders });
+    return new Response("Expected WebSocket connection", { status: 400 });
   }
 
   const { socket, response } = Deno.upgradeWebSocket(req);
@@ -43,7 +44,7 @@ Deno.serve(async (req: Request) => {
   const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
   if (!OPENAI_API_KEY) {
     console.error('OPENAI_API_KEY is not set');
-    return new Response("Server configuration error", { status: 500, headers: corsHeaders });
+    return new Response("Server configuration error", { status: 500 });
   }
 
   let openAISocket: WebSocket | null = null;
@@ -53,11 +54,12 @@ Deno.serve(async (req: Request) => {
     console.log('Client connected to chat relay');
     
     // Connect to OpenAI Realtime API
-    openAISocket = new WebSocket("wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-12-17", [
-      "realtime",
-      `openai-insecure-api-key.${OPENAI_API_KEY}`,
-      "openai-beta.realtime-v1"
-    ]);
+    openAISocket = new WebSocket("wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-12-17", {
+      headers: {
+        "Authorization": `Bearer ${OPENAI_API_KEY}`,
+        "OpenAI-Beta": "realtime=v1"
+      }
+    });
 
     openAISocket.onopen = () => {
       console.log('Connected to OpenAI Realtime API');
@@ -70,6 +72,7 @@ Deno.serve(async (req: Request) => {
 
         if (data.type === 'session.created' && !sessionCreated) {
           sessionCreated = true;
+          // Send session configuration after session.created
           const sessionUpdate = {
             type: 'session.update',
             session: {
@@ -149,10 +152,12 @@ Deno.serve(async (req: Request) => {
       const message = JSON.parse(event.data);
       console.log('Client message:', message.type);
       
+      // Handle function calls
       if (message.type === 'conversation.item.create') {
         console.log('Forwarding message to OpenAI');
       }
       
+      // Forward message to OpenAI
       openAISocket?.send(event.data);
     } catch (error) {
       console.error('Error processing client message:', error);

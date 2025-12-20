@@ -277,26 +277,26 @@ export const ListingCreationModal = ({
                 {step === 3 && (
                     <div className="space-y-4">
                         <div>
-                            <Label htmlFor="pricePerDay">Price per Day (₹) *</Label>
+                            <Label htmlFor="pricePerDay">Price per Day ($) *</Label>
                             <Input
                                 id="pricePerDay"
                                 type="number"
                                 value={pricePerDay}
                                 onChange={(e) => setPricePerDay(e.target.value)}
-                                placeholder="1500"
+                                placeholder="150"
                                 min="0"
                                 step="0.01"
                             />
                         </div>
 
                         <div>
-                            <Label htmlFor="pricePerWeek">Price per Week (₹) (Optional)</Label>
+                            <Label htmlFor="pricePerWeek">Price per Week ($) (Optional)</Label>
                             <Input
                                 id="pricePerWeek"
                                 type="number"
                                 value={pricePerWeek}
                                 onChange={(e) => setPricePerWeek(e.target.value)}
-                                placeholder="9000"
+                                placeholder="900"
                                 min="0"
                                 step="0.01"
                             />

@@ -10,13 +10,11 @@ import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from '@/components/ui/dialog';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Users, Search, MessageSquare, PlusCircle, Lock, Globe, MoreVertical, Edit, Trash2 } from 'lucide-react';
+import { Loader2, Users, Search, MessageSquare, PlusCircle, Lock, Globe } from 'lucide-react';
 import { Category } from '@/components/discussions/types';
 import { DiscussionChatInterface } from '@/components/discussions/DiscussionChatInterface';
-import { EnhancedSkeleton, CardSkeleton } from '@/components/ui/enhanced-skeleton';
 
 // --- DATA INTERFACES ---
 
@@ -36,31 +34,18 @@ interface Room {
 }
 
 // --- MAIN PAGE COMPONENT ---
-const DiscussionRoomsPage = ({ openCreate = false }: { openCreate?: boolean }) => {
+const DiscussionRoomsPage = () => {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
-  const { roomId } = useParams<{ roomId: string }>();
-  const navigate = useNavigate();
-
-  // Use URL as the source of truth for the selected room
-  const activeRoom = useMemo(() => {
-    if (!roomId || rooms.length === 0) return null;
-    return rooms.find(r => r.id === roomId) || null;
-  }, [roomId, rooms]);
-
+  const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCategory, setFilterCategory] = useState('all');
   const [sortBy, setSortBy] = useState('popularity');
-  const [isCreateModalOpen, setCreateModalOpen] = useState(openCreate);
+  const [isCreateModalOpen, setCreateModalOpen] = useState(false);
   const { toast } = useToast();
-
-  useEffect(() => {
-    if (openCreate) setCreateModalOpen(true);
-  }, [openCreate]);
-
-  // ... [fetchData and useEffect remain same, will rely on original file content for brevity if possible, but replace needs context] ...
-  // To avoid breaking the file, I will rewrite the surrounding state and effects cleanly.
+  const { roomId } = useParams<{ roomId: string }>();
+  const navigate = useNavigate();
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -82,6 +67,7 @@ const DiscussionRoomsPage = ({ openCreate = false }: { openCreate?: boolean }) =
         room_type: room.room_type as 'public' | 'private' | 'secret',
         category_id: room.category_id || '',
         creator_id: room.creator_id || '',
+        // Mock tags for UI richness
         tags: ['cinema', 'directing', 'qa'].slice(0, Math.floor(Math.random() * 3) + 1),
       }));
 
@@ -107,19 +93,25 @@ const DiscussionRoomsPage = ({ openCreate = false }: { openCreate?: boolean }) =
     };
   }, [fetchData]);
 
+  // Handle deep linking to a specific room
+  useEffect(() => {
+    if (roomId && rooms.length > 0 && !selectedRoom) {
+      const room = rooms.find(r => r.id === roomId);
+      if (room) {
+        setSelectedRoom(room);
+      }
+    }
+  }, [roomId, rooms, selectedRoom]);
+
   const handleRoomCreated = (newRoom: Room) => {
     setRooms(prevRooms => [newRoom, ...prevRooms]);
-    navigate(`/discussion-rooms/${newRoom.id}`);
+    setSelectedRoom(newRoom);
   };
 
   const handleRoomUpdated = (roomId: string, newTitle: string, newDescription: string) => {
     setRooms(prevRooms => prevRooms.map(r => r.id === roomId ? { ...r, title: newTitle, description: newDescription } : r));
-  }
-
-  const handleRoomDelete = (roomId: string) => {
-    setRooms(prevRooms => prevRooms.filter(r => r.id !== roomId));
-    if (activeRoom?.id === roomId) {
-      navigate('/discussion-rooms');
+    if (selectedRoom && selectedRoom.id === roomId) {
+      setSelectedRoom(prev => prev ? { ...prev, title: newTitle, description: newDescription } : null);
     }
   }
 
@@ -151,37 +143,23 @@ const DiscussionRoomsPage = ({ openCreate = false }: { openCreate?: boolean }) =
     return [...rooms].sort((a, b) => b.member_count - a.member_count).slice(0, 3);
   }, [rooms]);
 
-  // Loading state (initial load or resolving deep link)
-  // If we have a roomId but haven't found the room yet (and strict loading is true or rooms empty), show loading.
-  const isResolvingDeepLink = loading || (!!roomId && !activeRoom && rooms.length === 0);
 
-  if (isResolvingDeepLink) {
-    return (
-      <div className="min-h-screen bg-background text-foreground p-4 sm:p-6 lg:p-8">
-        <div className="container mx-auto pt-16 pb-24">
-          <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
-            <EnhancedSkeleton className="h-10 w-64" />
-            <EnhancedSkeleton className="h-10 w-32" />
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {[...Array(8)].map((_, i) => <CardSkeleton key={i} />)}
-          </div>
-        </div>
-      </div>
-    );
+  if (loading && rooms.length === 0) {
+    return <div className="flex h-screen w-full items-center justify-center bg-background"><Loader2 className="h-20 w-20 animate-spin text-primary" /></div>;
   }
 
-  if (activeRoom) {
+  if (selectedRoom) {
     return (
-      <div className="fixed inset-0 bg-background text-foreground flex flex-col z-50">
+      <div className="fixed inset-0 bg-background text-foreground flex flex-col pt-0 lg:pt-16 z-50">
         <DiscussionChatInterface
-          roomId={activeRoom.id}
+          roomId={selectedRoom.id}
           userRole="member"
-          roomTitle={activeRoom.title}
-          roomDescription={activeRoom.description}
-          categoryId={activeRoom.category_id}
+          roomTitle={selectedRoom.title}
+          roomDescription={selectedRoom.description}
+          categoryId={selectedRoom.category_id}
           categories={categories}
           onClose={() => {
+            setSelectedRoom(null);
             navigate('/discussion-rooms');
           }}
           onRoomUpdated={handleRoomUpdated}
@@ -214,7 +192,7 @@ const DiscussionRoomsPage = ({ openCreate = false }: { openCreate?: boolean }) =
         <section className="mb-12">
           <h2 className="text-2xl font-semibold mb-4 text-primary">Featured Rooms</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {featuredRooms.map(room => <RoomCard key={room.id} room={room} onJoin={(r) => navigate(`/discussion-rooms/${r.id}`)} onDelete={handleRoomDelete} />)}
+            {featuredRooms.map(room => <RoomCard key={room.id} room={room} onJoin={setSelectedRoom} />)}
           </div>
         </section>
 
@@ -255,7 +233,7 @@ const DiscussionRoomsPage = ({ openCreate = false }: { openCreate?: boolean }) =
 
           {/* Rooms Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredAndSortedRooms.map(room => <RoomCard key={room.id} room={room} onJoin={(r) => navigate(`/discussion-rooms/${r.id}`)} onDelete={handleRoomDelete} />)}
+            {filteredAndSortedRooms.map(room => <RoomCard key={room.id} room={room} onJoin={setSelectedRoom} />)}
           </div>
           {filteredAndSortedRooms.length === 0 && !loading && (
             <div className="text-center col-span-full py-12">
@@ -269,34 +247,7 @@ const DiscussionRoomsPage = ({ openCreate = false }: { openCreate?: boolean }) =
 };
 
 // --- ROOM CARD COMPONENT ---
-const RoomCard = ({ room, onJoin, onDelete }: { room: Room; onJoin: (room: Room) => void; onDelete?: (roomId: string) => void; }) => {
-  const { user } = useAuth();
-  const { toast } = useToast();
-  const [isDeleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [isDeleting, setDeleting] = useState(false);
-  const isOwner = user?.id === room.creator_id;
-
-  const handleDelete = async () => {
-    if (!onDelete) return;
-    setDeleting(true);
-    try {
-      const { error } = await supabase
-        .from('discussion_rooms')
-        .delete()
-        .eq('id', room.id);
-
-      if (error) throw error;
-
-      toast({ title: "Room deleted", description: "The discussion room has been deleted successfully." });
-      onDelete(room.id);
-      setDeleteDialogOpen(false);
-    } catch (error: any) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    } finally {
-      setDeleting(false);
-    }
-  };
-
+const RoomCard = ({ room, onJoin }: { room: Room; onJoin: (room: Room) => void; }) => {
   return (
     <Card className="glass-card hover-lift flex flex-col justify-between transform hover:-translate-y-1 transition-transform duration-300 overflow-hidden border-border">
       <CardContent className="p-5">
@@ -311,28 +262,6 @@ const RoomCard = ({ room, onJoin, onDelete }: { room: Room; onJoin: (room: Room)
                 <Lock className="h-3 w-3" />
                 Private
               </Badge>
-            )}
-            {isOwner && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
-                    <MoreVertical className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="bg-popover border-border">
-                  <DropdownMenuItem onClick={() => onJoin(room)} className="cursor-pointer">
-                    <Edit className="h-4 w-4 mr-2" />
-                    Edit Room
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => setDeleteDialogOpen(true)}
-                    className="cursor-pointer text-destructive focus:text-destructive"
-                  >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Delete Room
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
             )}
           </div>
         </div>
@@ -351,27 +280,6 @@ const RoomCard = ({ room, onJoin, onDelete }: { room: Room; onJoin: (room: Room)
           <MessageSquare className="w-4 h-4 mr-2" /> Join Chat
         </Button>
       </div>
-
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={isDeleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent className="bg-card border-border">
-          <DialogHeader>
-            <DialogTitle>Delete Room</DialogTitle>
-            <DialogDescription className="text-muted-foreground">
-              Are you sure you want to delete "{room.title}"? This action cannot be undone and all messages will be permanently deleted.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)} disabled={isDeleting}>
-              Cancel
-            </Button>
-            <Button variant="destructive" onClick={handleDelete} disabled={isDeleting}>
-              {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Delete
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </Card>
   );
 }
@@ -448,9 +356,6 @@ const CreateRoomModal = ({ categories, closeModal, onRoomCreated }: CreateRoomMo
     <DialogContent className="glass-modal border-border">
       <DialogHeader>
         <DialogTitle className="text-foreground">Create a New Discussion Room</DialogTitle>
-        <DialogDescription className="text-muted-foreground">
-          Start a new topic or group for film professionals to connect.
-        </DialogDescription>
       </DialogHeader>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>

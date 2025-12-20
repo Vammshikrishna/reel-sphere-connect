@@ -211,9 +211,9 @@ const Jobs = ({ openCreate = false }: { openCreate?: boolean }) => {
                           <div className="text-right">
                             <span className="text-xs text-gray-500 block mb-1">Salary Range</span>
                             <span className="font-semibold text-primary text-lg">
-                              {job.salary_min ? `₹${job.salary_min.toLocaleString()}` : ''}
+                              {job.salary_min ? `$${job.salary_min.toLocaleString()}` : ''}
                               {job.salary_min && job.salary_max ? ' - ' : ''}
-                              {job.salary_max ? `₹${job.salary_max.toLocaleString()}` : ''}
+                              {job.salary_max ? `$${job.salary_max.toLocaleString()}` : ''}
                             </span>
                           </div>
                         ) : (

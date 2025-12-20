@@ -7,10 +7,30 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "12.2.3 (519615d)"
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
   }
   public: {
     Tables: {
@@ -36,37 +56,59 @@ export type Database = {
           posted_at?: string
           title?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "announcements_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       budget_items: {
         Row: {
-          amount: number
+          actual_cost: number | null
           category: string
           created_at: string
-          description: string
+          estimated_cost: number | null
           id: string
+          item_name: string
+          notes: string | null
           project_id: string
-          status: string | null
+          updated_at: string
         }
         Insert: {
-          amount?: number
+          actual_cost?: number | null
           category: string
           created_at?: string
-          description: string
+          estimated_cost?: number | null
           id?: string
+          item_name: string
+          notes?: string | null
           project_id: string
-          status?: string | null
+          updated_at?: string
         }
         Update: {
-          amount?: number
+          actual_cost?: number | null
           category?: string
           created_at?: string
-          description?: string
+          estimated_cost?: number | null
           id?: string
+          item_name?: string
+          notes?: string | null
           project_id?: string
-          status?: string | null
+          updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "budget_items_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "project_spaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       call_participants: {
         Row: {
@@ -74,6 +116,7 @@ export type Database = {
           id: string
           joined_at: string
           left_at: string | null
+          status: string
           user_id: string
         }
         Insert: {
@@ -81,6 +124,7 @@ export type Database = {
           id?: string
           joined_at?: string
           left_at?: string | null
+          status?: string
           user_id: string
         }
         Update: {
@@ -88,6 +132,7 @@ export type Database = {
           id?: string
           joined_at?: string
           left_at?: string | null
+          status?: string
           user_id?: string
         }
         Relationships: [
@@ -100,79 +145,168 @@ export type Database = {
           },
         ]
       }
-      call_sheets: {
+      call_reactions: {
         Row: {
-          call_time: string
+          call_id: string
           created_at: string
-          created_by: string | null
+          emoji: string
           id: string
-          location: string | null
-          project_id: string
-          shoot_date: string
-          status: string | null
-          title: string
+          user_id: string
         }
         Insert: {
-          call_time: string
+          call_id: string
           created_at?: string
-          created_by?: string | null
+          emoji: string
           id?: string
-          location?: string | null
-          project_id: string
-          shoot_date: string
-          status?: string | null
-          title: string
+          user_id: string
         }
         Update: {
-          call_time?: string
+          call_id?: string
           created_at?: string
-          created_by?: string | null
+          emoji?: string
           id?: string
-          location?: string | null
-          project_id?: string
-          shoot_date?: string
-          status?: string | null
-          title?: string
-        }
-        Relationships: []
-      }
-      calls: {
-        Row: {
-          call_type: string
-          created_by: string
-          ended_at: string | null
-          id: string
-          room_id: string
-          room_type: string | null
-          started_at: string
-          status: string
-        }
-        Insert: {
-          call_type: string
-          created_by: string
-          ended_at?: string | null
-          id?: string
-          room_id: string
-          room_type?: string | null
-          started_at?: string
-          status?: string
-        }
-        Update: {
-          call_type?: string
-          created_by?: string
-          ended_at?: string | null
-          id?: string
-          room_id?: string
-          room_type?: string | null
-          started_at?: string
-          status?: string
+          user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "calls_room_id_fkey"
-            columns: ["room_id"]
+            foreignKeyName: "call_reactions_call_id_fkey"
+            columns: ["call_id"]
             isOneToOne: false
-            referencedRelation: "discussion_rooms"
+            referencedRelation: "calls"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      call_sheets: {
+        Row: {
+          call_time: string | null
+          created_at: string
+          date: string
+          director: string | null
+          director_phone: string | null
+          id: string
+          location: string | null
+          notes: string | null
+          producer: string | null
+          producer_phone: string | null
+          project_id: string
+          updated_at: string
+        }
+        Insert: {
+          call_time?: string | null
+          created_at?: string
+          date: string
+          director?: string | null
+          director_phone?: string | null
+          id?: string
+          location?: string | null
+          notes?: string | null
+          producer?: string | null
+          producer_phone?: string | null
+          project_id: string
+          updated_at?: string
+        }
+        Update: {
+          call_time?: string | null
+          created_at?: string
+          date?: string
+          director?: string | null
+          director_phone?: string | null
+          id?: string
+          location?: string | null
+          notes?: string | null
+          producer?: string | null
+          producer_phone?: string | null
+          project_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "call_sheets_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "project_spaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      calls: {
+        Row: {
+          created_at: string
+          daily_room_name: string
+          daily_room_url: string
+          ended_at: string | null
+          id: string
+          room_id: string
+          room_type: string
+          started_at: string
+          started_by: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          daily_room_name: string
+          daily_room_url: string
+          ended_at?: string | null
+          id?: string
+          room_id: string
+          room_type: string
+          started_at?: string
+          started_by?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          daily_room_name?: string
+          daily_room_url?: string
+          ended_at?: string | null
+          id?: string
+          room_id?: string
+          room_type?: string
+          started_at?: string
+          started_by?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
+      comments: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          parent_comment_id: string | null
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          parent_comment_id?: string | null
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          parent_comment_id?: string | null
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comments_parent_comment_id_fkey"
+            columns: ["parent_comment_id"]
+            isOneToOne: false
+            referencedRelation: "comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comments_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
             referencedColumns: ["id"]
           },
         ]
@@ -200,51 +334,6 @@ export type Database = {
           user2_id?: string
         }
         Relationships: []
-      }
-      direct_messages: {
-        Row: {
-          channel_id: string
-          content: string
-          created_at: string
-          id: string
-          read_at: string | null
-          recipient_id: string
-          sender_id: string
-        }
-        Insert: {
-          channel_id: string
-          content: string
-          created_at?: string
-          id?: string
-          read_at?: string | null
-          recipient_id: string
-          sender_id: string
-        }
-        Update: {
-          channel_id?: string
-          content?: string
-          created_at?: string
-          id?: string
-          read_at?: string | null
-          recipient_id?: string
-          sender_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "direct_messages_recipient_id_fkey"
-            columns: ["recipient_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "direct_messages_sender_id_fkey"
-            columns: ["sender_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       discussion_rooms: {
         Row: {
@@ -294,40 +383,58 @@ export type Database = {
             referencedRelation: "room_categories"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "discussion_rooms_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "project_spaces"
+            referencedColumns: ["id"]
+          },
         ]
       }
       files: {
         Row: {
           created_at: string
+          file_type: string | null
           id: string
           name: string
           project_id: string
-          size: number | null
-          type: string
+          size: number
+          updated_at: string
           uploaded_by: string | null
           url: string
         }
         Insert: {
           created_at?: string
+          file_type?: string | null
           id?: string
           name: string
           project_id: string
-          size?: number | null
-          type: string
+          size: number
+          updated_at?: string
           uploaded_by?: string | null
           url: string
         }
         Update: {
           created_at?: string
+          file_type?: string | null
           id?: string
           name?: string
           project_id?: string
-          size?: number | null
-          type?: string
+          size?: number
+          updated_at?: string
           uploaded_by?: string | null
           url?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "files_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "project_spaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       job_applications: {
         Row: {
@@ -439,32 +546,46 @@ export type Database = {
       legal_docs: {
         Row: {
           created_at: string
+          description: string | null
+          document_type: string | null
           id: string
           project_id: string
-          status: string | null
           title: string
-          type: string
+          updated_at: string
+          uploaded_by: string | null
           url: string | null
         }
         Insert: {
           created_at?: string
+          description?: string | null
+          document_type?: string | null
           id?: string
           project_id: string
-          status?: string | null
           title: string
-          type: string
+          updated_at?: string
+          uploaded_by?: string | null
           url?: string | null
         }
         Update: {
           created_at?: string
+          description?: string | null
+          document_type?: string | null
           id?: string
           project_id?: string
-          status?: string | null
           title?: string
-          type?: string
+          updated_at?: string
+          uploaded_by?: string | null
           url?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "legal_docs_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "project_spaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       likes: {
         Row: {
@@ -535,20 +656,42 @@ export type Database = {
           total_price?: number
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "marketplace_bookings_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketplace_bookings_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketplace_bookings_renter_id_fkey"
+            columns: ["renter_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       marketplace_listings: {
         Row: {
           availability_calendar: Json | null
-          category: string | null
+          category: string
           created_at: string | null
-          description: string | null
+          description: string
           id: string
           images: string[] | null
           is_active: boolean | null
           listing_type: Database["public"]["Enums"]["listing_type"]
-          location: string | null
-          price_per_day: number | null
+          location: string
+          price_per_day: number
           price_per_week: number | null
           specifications: Json | null
           title: string
@@ -557,15 +700,15 @@ export type Database = {
         }
         Insert: {
           availability_calendar?: Json | null
-          category?: string | null
+          category: string
           created_at?: string | null
-          description?: string | null
+          description: string
           id?: string
           images?: string[] | null
           is_active?: boolean | null
           listing_type: Database["public"]["Enums"]["listing_type"]
-          location?: string | null
-          price_per_day?: number | null
+          location: string
+          price_per_day: number
           price_per_week?: number | null
           specifications?: Json | null
           title: string
@@ -574,22 +717,30 @@ export type Database = {
         }
         Update: {
           availability_calendar?: Json | null
-          category?: string | null
+          category?: string
           created_at?: string | null
-          description?: string | null
+          description?: string
           id?: string
           images?: string[] | null
           is_active?: boolean | null
           listing_type?: Database["public"]["Enums"]["listing_type"]
-          location?: string | null
-          price_per_day?: number | null
+          location?: string
+          price_per_day?: number
           price_per_week?: number | null
           specifications?: Json | null
           title?: string
           updated_at?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "marketplace_listings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       marketplace_reviews: {
         Row: {
@@ -619,36 +770,26 @@ export type Database = {
           reviewer_id?: string
           vendor_id?: string | null
         }
-        Relationships: []
-      }
-      message_reactions: {
-        Row: {
-          created_at: string
-          emoji: string
-          id: string
-          message_id: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          emoji: string
-          id?: string
-          message_id: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          emoji?: string
-          id?: string
-          message_id?: string
-          user_id?: string
-        }
         Relationships: [
           {
-            foreignKeyName: "message_reactions_message_id_fkey"
-            columns: ["message_id"]
+            foreignKeyName: "marketplace_reviews_listing_id_fkey"
+            columns: ["listing_id"]
             isOneToOne: false
-            referencedRelation: "project_space_messages"
+            referencedRelation: "marketplace_listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketplace_reviews_reviewer_id_fkey"
+            columns: ["reviewer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketplace_reviews_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
             referencedColumns: ["id"]
           },
         ]
@@ -702,7 +843,6 @@ export type Database = {
           related_id: string | null
           related_type: string | null
           title: string
-          trigger_user_id: string | null
           type: string
           updated_at: string
           user_id: string
@@ -720,7 +860,6 @@ export type Database = {
           related_id?: string | null
           related_type?: string | null
           title: string
-          trigger_user_id?: string | null
           type: string
           updated_at?: string
           user_id: string
@@ -738,7 +877,6 @@ export type Database = {
           related_id?: string | null
           related_type?: string | null
           title?: string
-          trigger_user_id?: string | null
           type?: string
           updated_at?: string
           user_id?: string
@@ -798,39 +936,39 @@ export type Database = {
           content: string
           created_at: string
           id: string
-          parent_comment_id: string | null
           post_id: string
+          updated_at: string | null
           user_id: string
         }
         Insert: {
           content: string
           created_at?: string
           id?: string
-          parent_comment_id?: string | null
           post_id: string
+          updated_at?: string | null
           user_id: string
         }
         Update: {
           content?: string
           created_at?: string
           id?: string
-          parent_comment_id?: string | null
           post_id?: string
+          updated_at?: string | null
           user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "comments_parent_comment_id_fkey"
-            columns: ["parent_comment_id"]
-            isOneToOne: false
-            referencedRelation: "post_comments"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "comments_post_id_fkey"
+            foreignKeyName: "post_comments_post_id_fkey"
             columns: ["post_id"]
             isOneToOne: false
             referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "post_comments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
@@ -844,24 +982,39 @@ export type Database = {
       }
       post_likes: {
         Row: {
-          created_at: string | null
+          created_at: string
           id: string
-          post_id: string | null
-          user_id: string | null
+          post_id: string
+          user_id: string
         }
         Insert: {
-          created_at?: string | null
+          created_at?: string
           id?: string
-          post_id?: string | null
-          user_id?: string | null
+          post_id: string
+          user_id: string
         }
         Update: {
-          created_at?: string | null
+          created_at?: string
           id?: string
-          post_id?: string | null
-          user_id?: string | null
+          post_id?: string
+          user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "post_likes_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "post_likes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       posts: {
         Row: {
@@ -927,7 +1080,6 @@ export type Database = {
           instagram_url: string | null
           location: string | null
           onboarding_completed: boolean | null
-          phone: string | null
           social_links: Json | null
           updated_at: string | null
           username: string | null
@@ -944,7 +1096,6 @@ export type Database = {
           instagram_url?: string | null
           location?: string | null
           onboarding_completed?: boolean | null
-          phone?: string | null
           social_links?: Json | null
           updated_at?: string | null
           username?: string | null
@@ -961,7 +1112,6 @@ export type Database = {
           instagram_url?: string | null
           location?: string | null
           onboarding_completed?: boolean | null
-          phone?: string | null
           social_links?: Json | null
           updated_at?: string | null
           username?: string | null
@@ -972,30 +1122,40 @@ export type Database = {
       }
       project_applications: {
         Row: {
+          cover_letter: string | null
           created_at: string
           id: string
-          message: string | null
           project_id: string
           status: string
+          updated_at: string
           user_id: string
         }
         Insert: {
+          cover_letter?: string | null
           created_at?: string
           id?: string
-          message?: string | null
           project_id: string
           status?: string
+          updated_at?: string
           user_id: string
         }
         Update: {
+          cover_letter?: string | null
           created_at?: string
           id?: string
-          message?: string | null
           project_id?: string
           status?: string
+          updated_at?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "project_applications_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "project_spaces"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "project_applications_user_id_fkey"
             columns: ["user_id"]
@@ -1005,65 +1165,49 @@ export type Database = {
           },
         ]
       }
-      project_members: {
+      project_invites: {
         Row: {
+          created_at: string
+          created_by: string | null
+          expires_at: string | null
           id: string
-          joined_at: string
+          invite_code: string
+          max_uses: number | null
           project_id: string
-          role: string
-          user_id: string
+          updated_at: string
+          used_count: number | null
         }
         Insert: {
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
           id?: string
-          joined_at?: string
+          invite_code: string
+          max_uses?: number | null
           project_id: string
-          role?: string
-          user_id: string
+          updated_at?: string
+          used_count?: number | null
         }
         Update: {
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
           id?: string
-          joined_at?: string
+          invite_code?: string
+          max_uses?: number | null
           project_id?: string
-          role?: string
-          user_id?: string
+          updated_at?: string
+          used_count?: number | null
         }
         Relationships: [
           {
-            foreignKeyName: "project_members_project_id_fkey"
+            foreignKeyName: "project_invites_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
-            referencedRelation: "projects"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "project_members_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "project_spaces"
             referencedColumns: ["id"]
           },
         ]
-      }
-      project_message_read_status: {
-        Row: {
-          id: string
-          last_read_at: string
-          project_id: string
-          user_id: string
-        }
-        Insert: {
-          id?: string
-          last_read_at?: string
-          project_id: string
-          user_id: string
-        }
-        Update: {
-          id?: string
-          last_read_at?: string
-          project_id?: string
-          user_id?: string
-        }
-        Relationships: []
       }
       project_messages: {
         Row: {
@@ -1095,7 +1239,7 @@ export type Database = {
             foreignKeyName: "project_messages_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
-            referencedRelation: "projects"
+            referencedRelation: "project_spaces"
             referencedColumns: ["id"]
           },
           {
@@ -1126,7 +1270,15 @@ export type Database = {
           project_space_id?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "project_space_bookmarks_project_space_id_fkey"
+            columns: ["project_space_id"]
+            isOneToOne: false
+            referencedRelation: "project_spaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       project_space_categories: {
         Row: {
@@ -1146,26 +1298,69 @@ export type Database = {
         }
         Relationships: []
       }
+      project_space_join_requests: {
+        Row: {
+          created_at: string
+          id: number
+          project_space_id: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          project_space_id: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          project_space_id?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_space_join_requests_project_space_id_fkey"
+            columns: ["project_space_id"]
+            isOneToOne: false
+            referencedRelation: "project_spaces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_space_join_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_space_members: {
         Row: {
           created_at: string
           project_space_id: string
-          role: string
           user_id: string
         }
         Insert: {
           created_at?: string
           project_space_id: string
-          role?: string
           user_id: string
         }
         Update: {
           created_at?: string
           project_space_id?: string
-          role?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "project_space_members_project_space_id_fkey"
+            columns: ["project_space_id"]
+            isOneToOne: false
+            referencedRelation: "project_spaces"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "project_space_members_user_id_fkey"
             columns: ["user_id"]
@@ -1175,147 +1370,76 @@ export type Database = {
           },
         ]
       }
-      project_space_message_read_status: {
-        Row: {
-          id: string
-          last_read_at: string | null
-          project_space_id: string | null
-          user_id: string | null
-        }
-        Insert: {
-          id?: string
-          last_read_at?: string | null
-          project_space_id?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          id?: string
-          last_read_at?: string | null
-          project_space_id?: string | null
-          user_id?: string | null
-        }
-        Relationships: []
-      }
-      project_space_messages: {
-        Row: {
-          content: string
-          created_at: string
-          id: string
-          is_read: boolean | null
-          project_space_id: string
-          user_id: string
-        }
-        Insert: {
-          content: string
-          created_at?: string
-          id?: string
-          is_read?: boolean | null
-          project_space_id: string
-          user_id: string
-        }
-        Update: {
-          content?: string
-          created_at?: string
-          id?: string
-          is_read?: boolean | null
-          project_space_id?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       project_spaces: {
-        Row: {
-          created_at: string
-          id: string
-          name: string
-          project_id: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          name: string
-          project_id: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          name?: string
-          project_id?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "project_spaces_project_id_fkey"
-            columns: ["project_id"]
-            isOneToOne: true
-            referencedRelation: "projects"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      projects: {
         Row: {
           budget_max: number | null
           budget_min: number | null
+          category_id: string | null
           created_at: string
-          creator_id: string
-          current_team: Json | null
+          creator_id: string | null
           description: string | null
           end_date: string | null
           genre: string[] | null
           id: string
-          is_public: boolean | null
+          last_activity_at: string | null
           location: string | null
+          name: string
+          project_space_type:
+            | Database["public"]["Enums"]["project_space_type"]
+            | null
           required_roles: string[] | null
           start_date: string | null
           status: string | null
-          title: string
-          updated_at: string
+          tags: string[] | null
         }
         Insert: {
           budget_max?: number | null
           budget_min?: number | null
+          category_id?: string | null
           created_at?: string
-          creator_id: string
-          current_team?: Json | null
+          creator_id?: string | null
           description?: string | null
           end_date?: string | null
           genre?: string[] | null
           id?: string
-          is_public?: boolean | null
+          last_activity_at?: string | null
           location?: string | null
+          name: string
+          project_space_type?:
+            | Database["public"]["Enums"]["project_space_type"]
+            | null
           required_roles?: string[] | null
           start_date?: string | null
           status?: string | null
-          title: string
-          updated_at?: string
+          tags?: string[] | null
         }
         Update: {
           budget_max?: number | null
           budget_min?: number | null
+          category_id?: string | null
           created_at?: string
-          creator_id?: string
-          current_team?: Json | null
+          creator_id?: string | null
           description?: string | null
           end_date?: string | null
           genre?: string[] | null
           id?: string
-          is_public?: boolean | null
+          last_activity_at?: string | null
           location?: string | null
+          name?: string
+          project_space_type?:
+            | Database["public"]["Enums"]["project_space_type"]
+            | null
           required_roles?: string[] | null
           start_date?: string | null
           status?: string | null
-          title?: string
-          updated_at?: string
+          tags?: string[] | null
         }
         Relationships: [
           {
-            foreignKeyName: "projects_creator_id_fkey"
-            columns: ["creator_id"]
+            foreignKeyName: "project_spaces_category_id_fkey"
+            columns: ["category_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "project_space_categories"
             referencedColumns: ["id"]
           },
         ]
@@ -1335,25 +1459,51 @@ export type Database = {
         }
         Relationships: []
       }
+      room_join_requests: {
+        Row: {
+          created_at: string
+          id: number
+          room_id: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          room_id: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          room_id?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_join_requests_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "discussion_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       room_members: {
         Row: {
-          id: string
           joined_at: string
-          role: string
           room_id: string
           user_id: string
         }
         Insert: {
-          id?: string
           joined_at?: string
-          role?: string
           room_id: string
           user_id: string
         }
         Update: {
-          id?: string
           joined_at?: string
-          role?: string
           room_id?: string
           user_id?: string
         }
@@ -1365,13 +1515,6 @@ export type Database = {
             referencedRelation: "discussion_rooms"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "room_members_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
         ]
       }
       room_messages: {
@@ -1379,25 +1522,28 @@ export type Database = {
           content: string
           created_at: string
           id: string
+          priority: string | null
           room_id: string
-          updated_at: string
           user_id: string
+          visibility_role: string | null
         }
         Insert: {
           content: string
           created_at?: string
           id?: string
+          priority?: string | null
           room_id: string
-          updated_at?: string
           user_id: string
+          visibility_role?: string | null
         }
         Update: {
           content?: string
           created_at?: string
           id?: string
+          priority?: string | null
           room_id?: string
-          updated_at?: string
           user_id?: string
+          visibility_role?: string | null
         }
         Relationships: [
           {
@@ -1418,39 +1564,50 @@ export type Database = {
       }
       schedule_items: {
         Row: {
+          assigned_to: string | null
           created_at: string
           description: string | null
-          end_time: string
+          end_date: string | null
           id: string
-          location: string | null
           project_id: string
-          start_time: string
+          start_date: string
+          status: string | null
           title: string
-          type: string | null
+          updated_at: string
         }
         Insert: {
+          assigned_to?: string | null
           created_at?: string
           description?: string | null
-          end_time: string
+          end_date?: string | null
           id?: string
-          location?: string | null
           project_id: string
-          start_time: string
+          start_date: string
+          status?: string | null
           title: string
-          type?: string | null
+          updated_at?: string
         }
         Update: {
+          assigned_to?: string | null
           created_at?: string
           description?: string | null
-          end_time?: string
+          end_date?: string | null
           id?: string
-          location?: string | null
           project_id?: string
-          start_time?: string
+          start_date?: string
+          status?: string | null
           title?: string
-          type?: string | null
+          updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "schedule_items_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "project_spaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       shares: {
         Row: {
@@ -1483,78 +1640,88 @@ export type Database = {
       }
       shot_list: {
         Row: {
-          camera_angle: string | null
           created_at: string
-          description: string | null
-          equipment: string | null
+          description: string
           id: string
-          movement: string | null
+          notes: string | null
           project_id: string
-          scene: string
-          shot: string
+          scene: number
+          shot: number
           status: string | null
+          updated_at: string
         }
         Insert: {
-          camera_angle?: string | null
           created_at?: string
-          description?: string | null
-          equipment?: string | null
+          description: string
           id?: string
-          movement?: string | null
+          notes?: string | null
           project_id: string
-          scene: string
-          shot: string
+          scene: number
+          shot: number
           status?: string | null
+          updated_at?: string
         }
         Update: {
-          camera_angle?: string | null
           created_at?: string
-          description?: string | null
-          equipment?: string | null
+          description?: string
           id?: string
-          movement?: string | null
+          notes?: string | null
           project_id?: string
-          scene?: string
-          shot?: string
+          scene?: number
+          shot?: number
           status?: string | null
+          updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "shot_list_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "project_spaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       tasks: {
         Row: {
           assignee_id: string | null
           created_at: string
-          created_by: string | null
           description: string | null
           due_date: string | null
           id: string
+          is_completed: boolean | null
+          name: string
           project_space_id: string
-          status: string
-          title: string
         }
         Insert: {
           assignee_id?: string | null
           created_at?: string
-          created_by?: string | null
           description?: string | null
           due_date?: string | null
           id?: string
+          is_completed?: boolean | null
+          name: string
           project_space_id: string
-          status?: string
-          title: string
         }
         Update: {
           assignee_id?: string | null
           created_at?: string
-          created_by?: string | null
           description?: string | null
           due_date?: string | null
           id?: string
+          is_completed?: boolean | null
+          name?: string
           project_space_id?: string
-          status?: string
-          title?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "tasks_project_space_id_fkey"
+            columns: ["project_space_id"]
+            isOneToOne: false
+            referencedRelation: "project_spaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_analytics: {
         Row: {
@@ -1638,28 +1805,15 @@ export type Database = {
           title?: string
           user_id?: string
         }
-        Relationships: []
-      }
-      user_roles: {
-        Row: {
-          created_at: string
-          id: string
-          role: Database["public"]["Enums"]["app_role"]
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          role?: Database["public"]["Enums"]["app_role"]
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          role?: Database["public"]["Enums"]["app_role"]
-          user_id?: string
-        }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_experience_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_skills: {
         Row: {
@@ -1680,23 +1834,31 @@ export type Database = {
           skill_name?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_skills_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       vendors: {
         Row: {
           address: string | null
           business_name: string
-          category: string[] | null
+          category: string[]
           created_at: string | null
-          description: string | null
-          email: string | null
+          description: string
+          email: string
           id: string
           images: string[] | null
           is_verified: boolean | null
-          location: string | null
+          location: string
           logo_url: string | null
           owner_id: string
-          phone: string | null
+          phone: string
           services_offered: string[] | null
           updated_at: string | null
           verification_date: string | null
@@ -1705,17 +1867,17 @@ export type Database = {
         Insert: {
           address?: string | null
           business_name: string
-          category?: string[] | null
+          category: string[]
           created_at?: string | null
-          description?: string | null
-          email?: string | null
+          description: string
+          email: string
           id?: string
           images?: string[] | null
           is_verified?: boolean | null
-          location?: string | null
+          location: string
           logo_url?: string | null
           owner_id: string
-          phone?: string | null
+          phone: string
           services_offered?: string[] | null
           updated_at?: string | null
           verification_date?: string | null
@@ -1724,44 +1886,37 @@ export type Database = {
         Update: {
           address?: string | null
           business_name?: string
-          category?: string[] | null
+          category?: string[]
           created_at?: string | null
-          description?: string | null
-          email?: string | null
+          description?: string
+          email?: string
           id?: string
           images?: string[] | null
           is_verified?: boolean | null
-          location?: string | null
+          location?: string
           logo_url?: string | null
           owner_id?: string
-          phone?: string | null
+          phone?: string
           services_offered?: string[] | null
           updated_at?: string | null
           verification_date?: string | null
           website?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "vendors_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      create_discussion_room_with_creator: {
-        Args: {
-          c_id: string
-          cat_id: string
-          room_description: string
-          room_tags: string[]
-          room_title: string
-          type: string
-        }
-        Returns: string
-      }
-      end_call: {
-        Args: { p_call_id: string; p_user_id: string }
-        Returns: undefined
-      }
       get_listing_with_rating: {
         Args: { listing_uuid: string }
         Returns: {
@@ -1782,37 +1937,6 @@ export type Database = {
           title: string
           updated_at: string
           user_id: string
-        }[]
-      }
-      get_messages_for_channel: {
-        Args: { p_channel_id: string }
-        Returns: {
-          content: string
-          created_at: string
-          id: string
-          sender_id: string
-          sender_profile: Json
-        }[]
-      }
-      get_user_conversations: {
-        Args: { p_user_id: string }
-        Returns: {
-          conversation_id: string
-          last_message_content: string
-          last_message_created_at: string
-          other_user_id: string
-          other_user_username: string
-        }[]
-      }
-      get_user_conversations_with_profiles: {
-        Args: { p_user_id: string }
-        Returns: {
-          last_message_content: string
-          last_message_created_at: string
-          other_user_avatar_url: string
-          other_user_full_name: string
-          other_user_id: string
-          unread_count: number
         }[]
       }
       get_vendor_with_rating: {
@@ -1839,28 +1963,7 @@ export type Database = {
           website: string
         }[]
       }
-      has_role: {
-        Args: {
-          _role: Database["public"]["Enums"]["app_role"]
-          _user_id: string
-        }
-        Returns: boolean
-      }
       has_unread_messages: { Args: never; Returns: boolean }
-      is_member_of_project: { Args: { _project_id: string }; Returns: boolean }
-      is_member_of_room: { Args: { _room_id: string }; Returns: boolean }
-      is_project_space_member: {
-        Args: { p_project_space_id: string; p_user_id: string }
-        Returns: boolean
-      }
-      join_call: {
-        Args: { p_call_id: string; p_user_id: string }
-        Returns: undefined
-      }
-      leave_call: {
-        Args: { p_call_id: string; p_user_id: string }
-        Returns: undefined
-      }
       search_marketplace_listings: {
         Args: {
           filter_category?: string
@@ -1871,6 +1974,7 @@ export type Database = {
           search_query?: string
         }
         Returns: {
+          average_rating: number
           category: string
           created_at: string
           description: string
@@ -1881,6 +1985,7 @@ export type Database = {
           location: string
           price_per_day: number
           price_per_week: number
+          review_count: number
           title: string
           user_id: string
         }[]
@@ -1893,6 +1998,7 @@ export type Database = {
           verified_only?: boolean
         }
         Returns: {
+          average_rating: number
           business_name: string
           category: string[]
           created_at: string
@@ -1905,20 +2011,14 @@ export type Database = {
           logo_url: string
           owner_id: string
           phone: string
+          review_count: number
           services_offered: string[]
           website: string
         }[]
       }
-      start_call: {
-        Args: { call_type: string; created_by: string; room_id: string }
-        Returns: string
-      }
     }
     Enums: {
-      app_role: "admin" | "moderator" | "user"
       booking_status: "pending" | "confirmed" | "cancelled" | "completed"
-      call_status: "active" | "ended"
-      call_type: "audio" | "video"
       experience_level: "entry" | "junior" | "mid" | "senior" | "lead"
       job_application_status:
         | "pending"
@@ -2060,12 +2160,12 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
-      app_role: ["admin", "moderator", "user"],
       booking_status: ["pending", "confirmed", "cancelled", "completed"],
-      call_status: ["active", "ended"],
-      call_type: ["audio", "video"],
       experience_level: ["entry", "junior", "mid", "senior", "lead"],
       job_application_status: [
         "pending",
@@ -2087,3 +2187,4 @@ export const Constants = {
     },
   },
 } as const
+

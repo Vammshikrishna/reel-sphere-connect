@@ -110,38 +110,25 @@ export const ProjectCreationModal = ({ onProjectCreated, defaultOpen = false }: 
       }
 
       const { data: newProject, error } = await supabase
-        .from('projects')
+        .from('project_spaces')
         .insert({
-          title: projectData.name,
+          name: projectData.name,
           description: projectData.description,
           creator_id: user.id,
           genre: projectData.genre,
           location: projectData.location,
           required_roles: projectData.required_roles,
           status: projectData.status,
-          is_public: projectData.is_public,
+          project_space_type: projectData.is_public ? 'public' : 'private',
+          budget_min: projectData.budget_min ? parseInt(projectData.budget_min) : null,
+          budget_max: projectData.budget_max ? parseInt(projectData.budget_max) : null,
           start_date: projectData.start_date || null,
           end_date: projectData.end_date || null,
-          budget_min: projectData.budget_min ? parseFloat(projectData.budget_min) : null,
-          budget_max: projectData.budget_max ? parseFloat(projectData.budget_max) : null,
         })
         .select()
         .single();
 
       if (error) throw error;
-
-      // Create a project space for this project
-      if (newProject) {
-        const { error: spaceError } = await supabase.from('project_spaces').insert({
-          project_id: newProject.id,
-          name: `${projectData.name} Workspace`,
-        });
-
-        if (spaceError) {
-          console.error('Error creating project space:', spaceError);
-          // Don't throw - project is created, just log the error
-        }
-      }
 
       toast({
         title: "Project Created",

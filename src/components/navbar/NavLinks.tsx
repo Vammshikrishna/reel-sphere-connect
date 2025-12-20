@@ -1,3 +1,4 @@
+
 import { Link, useLocation } from 'react-router-dom';
 import { Home, Play, Film, Briefcase, Users } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';

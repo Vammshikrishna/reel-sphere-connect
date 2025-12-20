@@ -112,7 +112,7 @@ export const ProjectSpace = ({
           setUserRole('member');
         } else {
           const { data: project, error: projectError } = await supabase
-            .from('projects')
+            .from('project_spaces')
             .select('creator_id')
             .eq('id', projectId)
             .single();
@@ -191,7 +191,7 @@ export const ProjectSpace = ({
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => navigate(-1)}
+            onClick={() => navigate('/projects')}
             className="h-9 w-9 rounded-full hover:bg-white/10 shrink-0"
           >
             <ArrowLeft className="h-5 w-5" />
@@ -247,7 +247,7 @@ export const ProjectSpace = ({
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => navigate(-1)}
+              onClick={() => navigate('/projects')}
               className="h-8 w-8 rounded-full hover:bg-white/10 shrink-0 text-muted-foreground hover:text-primary transition-colors"
             >
               <ArrowLeft className="h-5 w-5" />
