@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState, useMemo } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/database.types';
@@ -28,7 +28,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
-      setUser(session?.user ?? null);
+      setUser((currentUser) => {
+        // Prevent unnecessary re-renders if user ID hasn't changed
+        // This helps avoid loops when tokens refresh but user identity is stable
+        if (currentUser?.id === session?.user?.id) {
+          return currentUser;
+        }
+        return session?.user ?? null;
+      });
       setIsLoading(false);
     });
 
@@ -38,7 +45,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   useEffect(() => {
-    if (user) {
+    if (user?.id) {
       const fetchProfile = async () => {
         const { data, error } = await supabase
           .from('profiles')
@@ -55,7 +62,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     } else {
       setProfile(null);
     }
-  }, [user]);
+  }, [user?.id]);
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({
@@ -82,7 +89,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     await supabase.auth.signOut();
   };
 
-  const value = {
+  const value = useMemo(() => ({
     user,
     profile,
     session,
@@ -90,7 +97,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     signIn,
     signUp,
     signOut,
-  };
+  }), [user, profile, session, isLoading]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
