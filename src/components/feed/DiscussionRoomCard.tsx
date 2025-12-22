@@ -1,12 +1,14 @@
 import { useState } from "react";
-import { Video, Users, MessageCircle } from "lucide-react";
+import { Video, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import EnhancedRealTimeChat from "../chat/EnhancedRealTimeChat";
+import { DiscussionChatInterface } from "../discussions/DiscussionChatInterface";
+import { Category } from "../discussions/types";
+import { InteractiveCard } from "@/components/ui/interactive-card";
 
 interface DiscussionRoomProps {
   id?: string;
@@ -14,7 +16,8 @@ interface DiscussionRoomProps {
   description: string;
   memberCount: number;
   members: Array<{ initials: string; color: string }>;
-  variant?: 'purple' | 'blue';
+  categoryId: string;
+  categories: Category[];
 }
 
 const DiscussionRoomCard = ({
@@ -23,7 +26,8 @@ const DiscussionRoomCard = ({
   description,
   memberCount,
   members,
-  variant = 'purple'
+  categoryId,
+  categories
 }: DiscussionRoomProps) => {
   const [showChat, setShowChat] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
@@ -75,28 +79,35 @@ const DiscussionRoomCard = ({
     }
   };
 
+  const handleRoomUpdated = (roomId: string, newTitle: string, newDescription: string) => {
+    // In a real app, this would update the parent state or trigger a refetch
+    console.log('Room updated:', roomId, newTitle, newDescription);
+  };
+
+
+
   return (
     <>
-      <div
-        className={`border border-white/10 rounded-lg p-4 bg-gradient-to-b from-black/40 
-          ${variant === 'purple'
-            ? 'to-cinesphere-purple/10 hover:from-black/30 hover:to-cinesphere-purple/20'
-            : 'to-cinesphere-blue/10 hover:from-black/30 hover:to-cinesphere-blue/20'} 
-          transition-all`}
+      <InteractiveCard
+        className="h-full flex flex-col justify-between"
+        variant="hover-lift"
+        title={title}
+        description={description}
       >
-        <div className="flex justify-between items-start mb-3 gap-2">
-          <h3 className="font-semibold text-foreground line-clamp-1">{title}</h3>
-          <Badge variant="secondary" className="text-xs whitespace-nowrap shrink-0">
-            <Users className="w-3 h-3 mr-1" />
-            {memberCount}
-          </Badge>
+        <div className="flex flex-col gap-4 h-full justify-between mt-4">
+          <div className="flex items-center gap-2">
+            <Badge variant="secondary" className="text-xs whitespace-nowrap shrink-0">
+              <Users className="w-3 h-3 mr-1" />
+              {memberCount} members
+            </Badge>
+          </div>
         </div>
-        <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{description}</p>
-        <div className="flex flex-wrap justify-between items-center gap-y-2">
+
+        <div className="flex flex-wrap justify-between items-center gap-y-2 mt-auto pt-4 border-t border-border/50">
           <div className="flex -space-x-2">
             {members.map((member, index) => (
-              <Avatar key={index} className="h-6 w-6 border border-border">
-                <AvatarFallback className={`${member.color} text-xs text-foreground`}>
+              <Avatar key={index} className="h-6 w-6 border border-background ring-2 ring-background">
+                <AvatarFallback className={`${member.color} text-[10px] font-medium flex items-center justify-center`}>
                   {member.initials}
                 </AvatarFallback>
               </Avatar>
@@ -105,7 +116,7 @@ const DiscussionRoomCard = ({
           <Button
             size="sm"
             variant="default"
-            className="h-8 px-3 bg-gradient-to-r from-primary to-primary/80 ml-auto"
+            className="h-8 px-3 ml-auto"
             onClick={joinRoom}
             disabled={isJoining}
           >
@@ -119,19 +130,22 @@ const DiscussionRoomCard = ({
             )}
           </Button>
         </div>
-      </div>
+      </InteractiveCard>
 
       <Dialog open={showChat} onOpenChange={setShowChat}>
         <DialogContent className="max-w-4xl h-[90vh] md:h-[600px] flex flex-col p-0">
-          <DialogHeader className="p-4 border-b">
-            <DialogTitle className="flex items-center gap-2">
-              <MessageCircle className="h-5 w-5" />
-              {title}
-            </DialogTitle>
-          </DialogHeader>
           <div className="flex-1 overflow-hidden">
             {id && showChat && (
-              <EnhancedRealTimeChat roomId={id} roomTitle={title} />
+              <DiscussionChatInterface
+                roomId={id}
+                userRole="member"
+                roomTitle={title}
+                roomDescription={description}
+                categoryId={categoryId}
+                categories={categories}
+                onClose={() => setShowChat(false)}
+                onRoomUpdated={handleRoomUpdated}
+              />
             )}
           </div>
         </DialogContent>

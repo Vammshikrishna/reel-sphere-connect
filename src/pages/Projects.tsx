@@ -17,14 +17,14 @@ import {
   Search,
   MapPin,
   Film,
-  ImageIcon,
   Bookmark,
   ChevronRight
 } from 'lucide-react';
+import { getGradientForString } from '@/utils/colors';
 
 interface Project {
   id: string;
-  name: string;
+  title: string;
   description: string;
   status: string;
   location: string;
@@ -36,7 +36,7 @@ interface Project {
   end_date?: string;
   creator_id: string;
   created_at: string;
-  project_space_bookmarks?: { user_id: string }[];
+  is_bookmarked?: boolean;
   profiles?: {
     full_name: string | null;
     username: string | null;
@@ -66,23 +66,15 @@ const Projects = ({ openCreate = false }: { openCreate?: boolean }) => {
   const fetchProjects = async () => {
     setLoading(true);
     try {
-      const isBookmarkedTab = activeTab === 'bookmarked';
-
-      // Fetch projects
-      // Fetch projects
-      // Note: project_spaces relates to projects, which relates to profiles (creator)
-      // We need to fetch the project details and the creator's profile
+      // Fetch projects with creator profiles
       let query = supabase
-        .from('project_spaces')
+        .from('projects')
         .select(`
           *,
-          projects (
-            *,
-            profiles (
-              full_name,
-              username,
-              avatar_url
-            )
+          profiles:creator_id (
+            full_name,
+            username,
+            avatar_url
           )
         `);
 
@@ -95,41 +87,37 @@ const Projects = ({ openCreate = false }: { openCreate?: boolean }) => {
 
       if (projectsError && projectsError.code !== 'PGRST116') throw projectsError;
 
-      // Fetch bookmarks for the current user
-      let projectsWithBookmarks = projectsData || [];
+      let projectsWithBookmarks: Project[] = (projectsData || []).map(p => ({ ...p, is_bookmarked: false })) as unknown as Project[];
 
+      // Fetch bookmarks for the current user if logged in
       if (user) {
+        // Get project_space IDs that are bookmarked
         const { data: bookmarksData, error: bookmarksError } = await supabase
           .from('project_space_bookmarks')
-          .select('project_space_id, user_id')
-          .eq('user_id', user.id);
+          .select('project_space_id');
 
         if (!bookmarksError && bookmarksData) {
-          // Merge bookmarks and map nested data
-          projectsWithBookmarks = (projectsData || []).map((space: any) => {
-            const project = space.projects;
-            const profile = project?.profiles;
+          // Get the project IDs from project_spaces
+          const spaceIds = bookmarksData.map(b => b.project_space_id);
 
-            return {
-              ...space,
-              // Map fields from the parent 'projects' table if needed, or keep using 'project_spaces' fields
-              // Assuming 'project_spaces' has the main display fields, but if they are on 'projects', map them here:
-              // status: project?.status || space.status,
-              // location: project?.location || space.location,
+          if (spaceIds.length > 0) {
+            const { data: spacesData } = await supabase
+              .from('project_spaces')
+              .select('project_id')
+              .in('id', spaceIds);
 
-              project_space_bookmarks: bookmarksData.filter(b => b.project_space_id === space.id),
-              profiles: profile ? {
-                full_name: profile.full_name,
-                username: profile.username,
-                avatar_url: profile.avatar_url
-              } : null
-            };
-          });
+            const bookmarkedProjectIds = new Set(spacesData?.map(s => s.project_id) || []);
 
-          // Filter for bookmarked tab
-          if (isBookmarkedTab) {
-            const bookmarkedIds = new Set(bookmarksData.map(b => b.project_space_id));
-            projectsWithBookmarks = projectsWithBookmarks.filter(p => bookmarkedIds.has(p.id));
+            // Mark projects as bookmarked
+            projectsWithBookmarks = (projectsData || []).map((project: any) => ({
+              ...project,
+              is_bookmarked: bookmarkedProjectIds.has(project.id)
+            }));
+
+            // Filter for bookmarked tab
+            if (activeTab === 'bookmarked') {
+              projectsWithBookmarks = projectsWithBookmarks.filter(p => p.is_bookmarked);
+            }
           }
         }
       }
@@ -149,7 +137,7 @@ const Projects = ({ openCreate = false }: { openCreate?: boolean }) => {
 
   const filteredProjects = projects.filter(project => {
     const matchesSearch =
-      project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      project.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (project.description && project.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
       project.location?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = filters.status.length === 0 || filters.status.includes(project.status);
@@ -162,22 +150,40 @@ const Projects = ({ openCreate = false }: { openCreate?: boolean }) => {
     e.stopPropagation();
     if (!user) return;
 
-    const isBookmarked = project.project_space_bookmarks?.some(b => b.user_id === user.id);
+    const isBookmarked = project.is_bookmarked;
     const newProjects = [...projects];
     const projectIndex = newProjects.findIndex(p => p.id === project.id);
 
+    // First, get or create the project_space for this project
+    const { data: projectSpace } = await supabase
+      .from('project_spaces')
+      .select('id')
+      .eq('project_id', project.id)
+      .single();
+
+    if (!projectSpace) {
+      toast({ title: "Error", description: "Project space not found", variant: "destructive" });
+      return;
+    }
+
     if (isBookmarked) {
-      const { error } = await supabase.from('project_space_bookmarks').delete().match({ project_space_id: project.id, user_id: user.id });
+      const { error } = await supabase
+        .from('project_space_bookmarks')
+        .delete()
+        .match({ project_space_id: projectSpace.id, user_id: user.id });
+
       if (!error) {
-        newProjects[projectIndex].project_space_bookmarks = newProjects[projectIndex].project_space_bookmarks?.filter(b => b.user_id !== user.id);
+        newProjects[projectIndex].is_bookmarked = false;
         setProjects(newProjects);
         toast({ title: "Bookmark removed" });
       }
     } else {
-      const { error } = await supabase.from('project_space_bookmarks').insert({ project_space_id: project.id, user_id: user.id });
+      const { error } = await supabase
+        .from('project_space_bookmarks')
+        .insert({ project_space_id: projectSpace.id, user_id: user.id });
+
       if (!error) {
-        if (!newProjects[projectIndex].project_space_bookmarks) newProjects[projectIndex].project_space_bookmarks = [];
-        newProjects[projectIndex].project_space_bookmarks?.push({ user_id: user.id });
+        newProjects[projectIndex].is_bookmarked = true;
         setProjects(newProjects);
         toast({ title: "Project bookmarked!" });
       }
@@ -185,7 +191,7 @@ const Projects = ({ openCreate = false }: { openCreate?: boolean }) => {
   };
 
   const ProjectCard = ({ project }: { project: Project }) => {
-    const isBookmarked = project.project_space_bookmarks?.some(b => b.user_id === user?.id);
+    const isBookmarked = project.is_bookmarked;
     const navigate = useNavigate();
 
     const handleCardClick = () => {
@@ -203,9 +209,13 @@ const Projects = ({ openCreate = false }: { openCreate?: boolean }) => {
         className="group relative bg-card border border-border rounded-xl overflow-hidden hover:shadow-xl hover:shadow-primary/10 transition-all duration-300 cursor-pointer hover:-translate-y-1"
       >
         {/* Image Section */}
-        <div className="relative w-full h-48 bg-gradient-to-br from-primary/20 via-secondary/20 to-primary/10 overflow-hidden">
-          <div className="absolute inset-0 flex items-center justify-center">
-            <ImageIcon className="w-16 h-16 text-muted-foreground/30" />
+        {/* Image Section */}
+        <div
+          className="relative w-full h-48 overflow-hidden"
+          style={{ background: getGradientForString(project.title) }}
+        >
+          <div className="absolute inset-0 flex items-center justify-center bg-black/10">
+            <Film className="w-16 h-16 text-white/30" />
           </div>
 
           {/* Bookmark Button */}
@@ -216,9 +226,16 @@ const Projects = ({ openCreate = false }: { openCreate?: boolean }) => {
             <Bookmark className={`w-4 h-4 ${isBookmarked ? 'fill-primary text-primary' : 'text-muted-foreground'}`} />
           </button>
 
+          {/* New Badge */}
+          {new Date(project.created_at) > new Date(Date.now() - 3 * 24 * 60 * 60 * 1000) && (
+            <div className="absolute top-3 left-3">
+              <Badge className="bg-primary text-primary-foreground shadow-lg animate-pulse">New</Badge>
+            </div>
+          )}
+
           {/* Status Badge */}
           <div className="absolute bottom-3 left-3">
-            <Badge variant={getStatusVariant(project.status)} className="capitalize shadow-lg">
+            <Badge variant={getStatusVariant(project.status)} className="capitalize shadow-lg bg-background/80 backdrop-blur-sm">
               {project.status}
             </Badge>
           </div>
@@ -228,7 +245,7 @@ const Projects = ({ openCreate = false }: { openCreate?: boolean }) => {
         <div className="p-5 space-y-3">
           {/* Title */}
           <h3 className="font-bold text-xl text-foreground line-clamp-1 group-hover:text-primary transition-colors">
-            {project.name}
+            {project.title}
           </h3>
 
           {/* Description */}

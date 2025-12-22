@@ -329,7 +329,6 @@ export type Database = {
         }
         Relationships: []
       }
-<<<<<<< HEAD
       film_reviews: {
         Row: {
           created_at: string | null
@@ -371,8 +370,6 @@ export type Database = {
           }
         ]
       }
-=======
->>>>>>> 07f2578807b647f99ff171f31759d525f67d4e1a
       job_applications: {
         Row: {
           applicant_id: string
@@ -1364,7 +1361,6 @@ export type Database = {
           },
         ]
       }
-<<<<<<< HEAD
       review_helpful_marks: {
         Row: {
           created_at: string | null
@@ -1401,8 +1397,6 @@ export type Database = {
           }
         ]
       }
-=======
->>>>>>> 07f2578807b647f99ff171f31759d525f67d4e1a
       room_categories: {
         Row: {
           id: string
@@ -1723,6 +1717,44 @@ export type Database = {
         }
         Relationships: []
       }
+      user_film_ratings: {
+        Row: {
+          created_at: string
+          id: string
+          rating: number
+          review: string | null
+          tmdb_id: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          rating: number
+          review?: string | null
+          tmdb_id: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          rating?: number
+          review?: string | null
+          tmdb_id?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_film_ratings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -1875,6 +1907,21 @@ export type Database = {
           id: string
           sender_id: string
           sender_profile: Json
+        }[]
+      }
+      get_scored_feed: {
+        Args: { limit_count?: number }
+        Returns: {
+          author_id: string
+          comment_count: number
+          content: string
+          created_at: string
+          id: string
+          like_count: number
+          media_type: string
+          media_url: string
+          score: number
+          share_count: number
         }[]
       }
       get_user_conversations: {

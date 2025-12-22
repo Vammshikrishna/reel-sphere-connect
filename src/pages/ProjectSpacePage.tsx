@@ -30,8 +30,8 @@ const ProjectSpacePage = () => {
     const fetchProject = async () => {
       try {
         const { data: projectData, error: projectError } = await supabase
-          .from('project_spaces')
-          .select('id, name, description')
+          .from('projects')
+          .select('id, title, description')
           .eq('id', projectId)
           .single();
 
@@ -40,7 +40,7 @@ const ProjectSpacePage = () => {
           setError('Project not found');
           return;
         }
-        setProject({ id: projectData.id, title: projectData.name, description: projectData.description });
+        setProject({ id: projectData.id, title: projectData.title, description: projectData.description });
 
       } catch (err) {
         console.error('Error fetching project:', err);
@@ -67,7 +67,7 @@ const ProjectSpacePage = () => {
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-4">Error</h1>
           <p className="text-muted-foreground mb-6">{error || 'Project not found'}</p>
-          <Button onClick={() => navigate('/projects')} className="gap-2">
+          <Button onClick={() => navigate(-1)} className="gap-2">
             <ArrowLeft className="h-4 w-4" />
             Back to Projects
           </Button>
